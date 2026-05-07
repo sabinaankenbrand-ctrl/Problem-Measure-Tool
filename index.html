@@ -14,19 +14,17 @@
   }
   header h1 { font-size: 1rem; font-weight: 600; }
 
-  .toggle {
-    display: flex; background: rgba(255,255,255,0.12);
-    border-radius: 6px; padding: 3px; gap: 2px;
-  }
-  .toggle-btn {
-    padding: 5px 12px; border: none; border-radius: 4px;
-    font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 600;
-    cursor: pointer; background: transparent; color: rgba(255,255,255,0.65);
-    transition: all 0.15s;
-  }
-  .toggle-btn.active { background: white; color: #1187a7; }
-
-  .layout { display: flex; height: calc(100vh - 52px); }
+  .tabs {
+  display: flex; border-bottom: 1px solid #d0dce8;
+  background: white; flex-shrink: 0;
+}
+.tab-btn {
+  flex: 1; padding: 9px 12px; border: none; border-bottom: 3px solid transparent;
+  font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 600;
+  cursor: pointer; background: transparent; color: #8aa0b0;
+  transition: all 0.15s;
+}
+.tab-btn.active { color: #1187a7; border-bottom-color: #1187a7; }
 
   .panel-left {
     width: 420px; background: white;
@@ -117,14 +115,14 @@
 
 <header>
   <h1>Problem-Measure-Assignment</h1>
-  <div class="toggle">
-    <button class="toggle-btn active" id="btn-pm" onclick="setMode('pm')">Problems → Measures</button>
-    <button class="toggle-btn" id="btn-mp" onclick="setMode('mp')">Measures → Problems</button>
-  </div>
 </header>
 
 <div class="layout">
   <div class="panel-left">
+   <div class="tabs">
+  <button class="tab-btn active" id="btn-pm" onclick="setMode('pm')">Problems → Measures</button>
+  <button class="tab-btn" id="btn-mp" onclick="setMode('mp')">Measures → Problems</button>
+</div>
     <div class="panel-header" id="left-header">Problems</div>
     <div class="list-scroll" id="left-list"></div>
   </div>
