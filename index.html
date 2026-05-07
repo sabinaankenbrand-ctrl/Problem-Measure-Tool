@@ -9,7 +9,7 @@
   body { font-family: system-ui, sans-serif; background: #f0f4f8; color: #1a2a3a; }
 
   header {
-    background: #1a5276; color: white; padding: 12px 20px;
+    background: #1187a7; color: white; padding: 12px 20px;
     display: flex; align-items: center; justify-content: space-between;
   }
   header h1 { font-size: 1rem; font-weight: 600; }
@@ -24,7 +24,7 @@
     cursor: pointer; background: transparent; color: rgba(255,255,255,0.65);
     transition: all 0.15s;
   }
-  .toggle-btn.active { background: white; color: #1a5276; }
+  .toggle-btn.active { background: white; color: #1187a7; }
 
   .layout { display: flex; height: calc(100vh - 52px); }
 
@@ -53,14 +53,14 @@
     display: flex; align-items: flex-start; gap: 7px;
     transition: background 0.1s;
   }
-  .item:hover { background: #f0f9ff; border-left-color: #2980b9; }
-  .item.selected { background: #1a5276; border-left-color: #1abc9c; }
+  .item:hover { background: #eef7fa; border-left-color: #1187a7; }
+  .item.selected { background: #1a5276; border-left-color: #7dcfe3; }
   .item.selected .item-id { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
   .item.selected .item-name { color: white; }
 
   .item-id {
     font-size: 0.63rem; font-weight: 600; color: #8aa0b0;
-    background: #f0f4f8; border-radius: 3px; padding: 2px 4px;
+    background: #eef7fa; border-radius: 3px; padding: 2px 4px;
     flex-shrink: 0; margin-top: 2px; white-space: nowrap;
   }
   .item-name { font-size: 0.81rem; color: #2c3e50; line-height: 1.4; }
@@ -89,12 +89,12 @@
   .result-section { margin-bottom: 20px; }
   .result-group-title {
     font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: #2980b9; padding-bottom: 6px;
+    letter-spacing: 0.06em; color: #1187a7; padding-bottom: 6px;
     border-bottom: 1px solid #d0dce8; margin-bottom: 8px;
     display: flex; align-items: center; gap: 6px;
   }
   .result-count {
-    background: #2980b9; color: white; border-radius: 8px;
+    background: #1187a7; color: white; border-radius: 8px;
     padding: 1px 6px; font-size: 0.62rem;
   }
   .result-item {
@@ -104,7 +104,7 @@
     display: flex; align-items: flex-start; gap: 7px;
   }
   .result-id {
-    font-size: 0.62rem; font-weight: 600; color: #2980b9;
+    font-size: 0.62rem; font-weight: 600; color: #1187a7;
     background: #e8f4fd; border-radius: 3px; padding: 2px 5px;
     flex-shrink: 0; margin-top: 1px; white-space: nowrap;
   }
@@ -116,7 +116,7 @@
 <body>
 
 <header>
-  <h1>River Problems &amp; Measures</h1>
+  <h1>Problem-Measure-Assignment</h1>
   <div class="toggle">
     <button class="toggle-btn active" id="btn-pm" onclick="setMode('pm')">Problems → Measures</button>
     <button class="toggle-btn" id="btn-mp" onclick="setMode('mp')">Measures → Problems</button>
