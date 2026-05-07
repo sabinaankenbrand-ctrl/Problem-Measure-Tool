@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>River Problems & Measures</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f0f4f8; color: #1a2a3a; }
+
+  header {
+    background: #1a5276; color: white; padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 { font-size: 1rem; font-weight: 600; }
+
+  .toggle {
+    display: flex; background: rgba(255,255,255,0.12);
+    border-radius: 6px; padding: 3px; gap: 2px;
+  }
+  .toggle-btn {
+    padding: 5px 12px; border: none; border-radius: 4px;
+    font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; background: transparent; color: rgba(255,255,255,0.65);
+    transition: all 0.15s;
+  }
+  .toggle-btn.active { background: white; color: #1a5276; }
+
+  .layout { display: flex; height: calc(100vh - 52px); }
+
+  .panel-left {
+    width: 320px; background: white;
+    border-right: 1px solid #d0dce8;
+    display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+  }
+  .panel-header {
+    padding: 10px 14px; border-bottom: 1px solid #d0dce8;
+    font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: #8aa0b0;
+  }
+  .list-scroll { flex: 1; overflow-y: auto; }
+
+  .group-header {
+    padding: 8px 14px 3px; display: flex; align-items: center; gap: 7px;
+    position: sticky; top: 0; background: white; z-index: 1;
+    border-bottom: 1px solid #e8eef5;
+  }
+  .group-label { font-size: 0.7rem; font-weight: 600; color: #4a6070; }
+
+  .item {
+    padding: 7px 14px 7px 18px; cursor: pointer;
+    border-left: 3px solid transparent;
+    display: flex; align-items: flex-start; gap: 7px;
+    transition: background 0.1s;
+  }
+  .item:hover { background: #f0f9ff; border-left-color: #2980b9; }
+  .item.selected { background: #1a5276; border-left-color: #1abc9c; }
+  .item.selected .item-id { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+  .item.selected .item-name { color: white; }
+
+  .item-id {
+    font-size: 0.63rem; font-weight: 600; color: #8aa0b0;
+    background: #f0f4f8; border-radius: 3px; padding: 2px 4px;
+    flex-shrink: 0; margin-top: 2px; white-space: nowrap;
+  }
+  .item-name { font-size: 0.81rem; color: #2c3e50; line-height: 1.4; }
+
+  .panel-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .detail-header {
+    padding: 14px 20px 12px; border-bottom: 1px solid #d0dce8;
+    background: white; flex-shrink: 0;
+  }
+  .detail-label {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: #8aa0b0; margin-bottom: 4px;
+  }
+  .detail-title { font-size: 1rem; font-weight: 600; color: #1a2a3a; line-height: 1.3; }
+  .detail-meta { margin-top: 5px; font-size: 0.75rem; color: #8aa0b0; }
+
+  .detail-scroll { flex: 1; overflow-y: auto; padding: 16px 20px; }
+
+  .empty-state {
+    display: flex; align-items: center;
+    justify-content: center; height: 100%; color: #aaa; text-align: center;
+  }
+  .empty-state p { font-size: 0.85rem; max-width: 260px; line-height: 1.5; }
+
+  .result-section { margin-bottom: 20px; }
+  .result-group-title {
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #2980b9; padding-bottom: 6px;
+    border-bottom: 1px solid #d0dce8; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .result-count {
+    background: #2980b9; color: white; border-radius: 8px;
+    padding: 1px 6px; font-size: 0.62rem;
+  }
+  .result-item {
+    padding: 7px 10px; border-radius: 6px; margin-bottom: 4px;
+    background: white; border: 1px solid #e8eef5;
+    font-size: 0.81rem; color: #2c3e50; line-height: 1.4;
+    display: flex; align-items: flex-start; gap: 7px;
+  }
+  .result-id {
+    font-size: 0.62rem; font-weight: 600; color: #2980b9;
+    background: #e8f4fd; border-radius: 3px; padding: 2px 5px;
+    flex-shrink: 0; margin-top: 1px; white-space: nowrap;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: #d0dce8; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>River Problems &amp; Measures</h1>
+  <div class="toggle">
+    <button class="toggle-btn active" id="btn-pm" onclick="setMode('pm')">Problems → Measures</button>
+    <button class="toggle-btn" id="btn-mp" onclick="setMode('mp')">Measures → Problems</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="panel-left">
+    <div class="panel-header" id="left-header">Problems</div>
+    <div class="list-scroll" id="left-list"></div>
+  </div>
+  <div class="panel-right">
+    <div id="detail-header" class="detail-header" style="display:none">
+      <div class="detail-label" id="detail-label"></div>
+      <div class="detail-title" id="detail-title"></div>
+      <div class="detail-meta" id="detail-meta"></div>
+    </div>
+    <div class="detail-scroll" id="detail-content">
+      <div class="empty-state">
+        <p id="empty-hint">Select a problem on the left to see all linked measures.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+let currentMode = 'pm';
+let selectedEl = null;
+
+const problems = [];
+const seenP = {};
+LINKS.forEach(function(l) {
+  if (!seenP[l.pid]) {
+    seenP[l.pid] = true;
+    problems.push({ id: l.pid, name: l.pn, group: l.pg });
+  }
+});
+
+const measures = [];
+const seenM = {};
+LINKS.forEach(function(l) {
+  if (!seenM[l.mid]) {
+    seenM[l.mid] = true;
+    measures.push({ id: l.mid, name: l.mn, group: l.mg });
+  }
+});
+
+function renderList(items) {
+  var container = document.getElementById('left-list');
+  container.innerHTML = '';
+  selectedEl = null;
+
+  var groups = {};
+  items.forEach(function(item) {
+    if (!groups[item.group]) groups[item.group] = [];
+    groups[item.group].push(item);
+  });
+
+  Object.keys(groups).forEach(function(gname) {
+    var gh = document.createElement('div');
+    gh.className = 'group-header';
+    gh.innerHTML = '<span class="group-label">' + gname + '</span>';
+    container.appendChild(gh);
+
+    groups[gname].forEach(function(item) {
+      var el = document.createElement('div');
+      el.className = 'item';
+      el.innerHTML = '<span class="item-id">' + item.id + '</span><span class="item-name">' + item.name + '</span>';
+      el.onclick = (function(i, e) { return function() { selectItem(i, e); }; })(item, el);
+      container.appendChild(el);
+    });
+  });
+}
+
+function selectItem(item, el) {
+  if (selectedEl) selectedEl.classList.remove('selected');
+  el.classList.add('selected');
+  selectedEl = el;
+  if (currentMode === 'pm') {
+    showMeasuresForProblem(item);
+  } else {
+    showProblemsForMeasure(item);
+  }
+}
+
+function showMeasuresForProblem(p) {
+  var linked = LINKS.filter(function(l) { return l.pid === p.id; });
+  var mgGroups = {};
+  linked.forEach(function(l) {
+    if (!mgGroups[l.mg]) mgGroups[l.mg] = [];
+    if (!mgGroups[l.mg].find(function(x) { return x.id === l.mid; }))
+      mgGroups[l.mg].push({ id: l.mid, name: l.mn });
+  });
+  var total = Object.values(mgGroups).reduce(function(s, a) { return s + a.length; }, 0);
+
+  document.getElementById('detail-header').style.display = 'block';
+  document.getElementById('detail-label').textContent = 'Selected Problem';
+  document.getElementById('detail-title').textContent = p.name;
+  document.getElementById('detail-meta').textContent = total + ' measures in ' + Object.keys(mgGroups).length + ' groups · ' + p.group;
+  renderResults(mgGroups);
+}
+
+function showProblemsForMeasure(m) {
+  var linked = LINKS.filter(function(l) { return l.mid === m.id; });
+  var pgGroups = {};
+  linked.forEach(function(l) {
+    if (!pgGroups[l.pg]) pgGroups[l.pg] = [];
+    if (!pgGroups[l.pg].find(function(x) { return x.id === l.pid; }))
+      pgGroups[l.pg].push({ id: l.pid, name: l.pn });
+  });
+  var total = Object.values(pgGroups).reduce(function(s, a) { return s + a.length; }, 0);
+
+  document.getElementById('detail-header').style.display = 'block';
+  document.getElementById('detail-label').textContent = 'Selected Measure';
+  document.getElementById('detail-title').textContent = m.name;
+  document.getElementById('detail-meta').textContent = total + ' linked problems in ' + Object.keys(pgGroups).length + ' groups · ' + m.group;
+  renderResults(pgGroups);
+}
+
+function renderResults(groups) {
+  var content = document.getElementById('detail-content');
+  content.innerHTML = '';
+  Object.keys(groups).forEach(function(gname) {
+    var items = groups[gname];
+    var section = document.createElement('div');
+    section.className = 'result-section';
+    section.innerHTML = '<div class="result-group-title">' + gname + '<span class="result-count">' + items.length + '</span></div>';
+    items.forEach(function(item) {
+      var el = document.createElement('div');
+      el.className = 'result-item';
+      el.innerHTML = '<span class="result-id">' + item.id + '</span><span>' + item.name + '</span>';
+      section.appendChild(el);
+    });
+    content.appendChild(section);
+  });
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btn-pm').classList.toggle('active', mode === 'pm');
+  document.getElementById('btn-mp').classList.toggle('active', mode === 'mp');
+  document.getElementById('detail-header').style.display = 'none';
+  document.getElementById('detail-content').innerHTML = '<div class="empty-state"><p>' + (mode === 'pm' ? 'Select a problem on the left to see all linked measures.' : 'Select a measure on the left to see all linked problems.') + '</p></div>';
+  if (mode === 'pm') {
+    document.getElementById('left-header').textContent = 'Problems';
+    renderList(problems);
+  } else {
+    document.getElementById('left-header').textContent = 'Measures';
+    renderList(measures);
+  }
+}
+
+renderList(problems);
+</script>
+</body>
+</html>
