@@ -1,1 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Problem-Measure-Assignment</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #eef7fa; color: #1a2a3a; }
 
+  header {
+    background: #1187a7; color: white; padding: 12px 20px;
+  }
+  header h1 { font-size: 1rem; font-weight: 600; }
+
+  .layout { display: flex; height: calc(100vh - 48px); }
+
+  /* ALL THREE PANELS */
+  .panel {
+    display: flex; flex-direction: column; overflow: hidden;
+    background: white; border-right: 1px solid #d0dce8;
+  }
+  .panel-problems-left { width: 30%; flex-shrink: 0; }
+  .panel-measures { width: 35%; flex-shrink: 0; }
+  .panel-problems-right { flex: 1; }
+
+  .panel-header {
+    padding: 10px 14px; border-bottom: 1px solid #d0dce8;
+    font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: #8aa0b0;
+    flex-shrink: 0;
+  }
+
+  .list-scroll { flex: 1; overflow-y: auto; }
+
+  /* GROUP HEADERS */
+  .group-header {
+    padding: 8px 14px 3px; display: flex; align-items: center;
+    position: sticky; top: 0; background: white; z-index: 1;
+    border-bottom: 1px solid #e8eef5;
+  }
+  .group-label { font-size: 0.7rem; font-weight: 600; color: #4a6070; }
+
+  /* LIST ITEMS */
+  .item {
+    padding: 7px 14px 7px 18px; cursor: pointer;
+    border-left: 3px solid transparent;
+    display: flex; align-items: flex-start; gap: 7px;
+    transition: background 0.1s;
+  }
+  .item:hover { background: #eef7fa; border-left-color: #1187a7; }
+  .item.selected { background: #1187a7; border-left-color: #7dcfe3; }
+  .item.selected .item-id { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+  .item.selected .item-name { color: white; }
+
+  .item-id {
+    font-size: 0.63rem; font-weight: 600; color: #8aa0b0;
+    background: #eef7fa; border-radius: 3px; padding: 2px 4px;
+    flex-shrink: 0; margin-top: 2px; white-space: nowrap;
+  }
+  .item-name { font-size: 0.81rem; color: #2c3e50; line-height: 1.4; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex; align-items: center; justify-content: center;
+    height: 100%; color: #aaa; text-align: center; padding: 20px;
+  }
+  .empty-state p { font-size: 0.82rem; max-width: 200px; line-height: 1.5; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: #d0dce8; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Problem-Measure-Assignment</h1>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: Problems -->
+  <div class="panel panel-problems-left">
+    <div class="panel-header">Problems</div>
+    <div class="list-scroll" id="problem-list"></div>
+  </div>
+
+  <!-- MIDDLE: Measures -->
+  <div class="panel panel-measures">
+    <div class="panel-header">Measures</div>
+    <div class="list-scroll" id="measure-list">
+      <div class="empty-state"><p>Select a problem to see linked measures.</p></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Related Problems -->
+  <div class="panel panel-problems-right">
+    <div class="panel-header">Associated Problems</div>
+    <div class="list-scroll" id="related-list">
+      <div class="empty-state"><p>Select a measure to see associated problems.</p></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="data.js"></script>
+<script>
+var selectedProblemEl = null;
+var selectedMeasureEl = null;
+
+// Build problem list
+var problems = [];
+var seenP = {};
+LINKS.forEach(function(l) {
+  if (!seenP[l.pid]) {
+    seenP[l.pid] = true;
+    problems.push({ id: l.pid, name: l.pn, group: l.pg });
+  }
+});
+
+// Render problems (left panel)
+var problemGroups = {};
+problems.forEach(function(p) {
+  if (!problemGroups[p.group]) problemGroups[p.group] = [];
+  problemGroups[p.group].push(p);
+});
+
+var problemList = document.getElementById('problem-list');
+Object.keys(problemGroups).forEach(function(gname) {
+  var gh = document.createElement('div');
+  gh.className = 'group-header';
+  gh.innerHTML = '<span class="group-label">' + gname + '</span>';
+  problemList.appendChild(gh);
+
+  problemGroups[gname].forEach(function(p) {
+    var el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = '<span class="item-id">' + p.id + '</span><span class="item-name">' + p.name + '</span>';
+    el.onclick = (function(item, elem) { return function() { selectProblem(item, elem); }; })(p, el);
+    problemList.appendChild(el);
+  });
+});
+
+// Select a problem → show measures in middle
+function selectProblem(p, el) {
+  if (selectedProblemEl) selectedProblemEl.classList.remove('selected');
+  el.classList.add('selected');
+  selectedProblemEl = el;
+
+  // Clear right panel
+  selectedMeasureEl = null;
+  document.getElementById('related-list').innerHTML =
+    '<div class="empty-state"><p>Select a measure to see associated problems.</p></div>';
+
+  // Get linked measures grouped
+  var linked = LINKS.filter(function(l) { return l.pid === p.id; });
+  var mgGroups = {};
+  linked.forEach(function(l) {
+    if (!mgGroups[l.mg]) mgGroups[l.mg] = [];
+    if (!mgGroups[l.mg].find(function(x) { return x.id === l.mid; }))
+      mgGroups[l.mg].push({ id: l.mid, name: l.mn });
+  });
+
+  var measureList = document.getElementById('measure-list');
+  measureList.innerHTML = '';
+
+  Object.keys(mgGroups).forEach(function(gname) {
+    var gh = document.createElement('div');
+    gh.className = 'group-header';
+    gh.innerHTML = '<span class="group-label">' + gname + '</span>';
+    measureList.appendChild(gh);
+
+    mgGroups[gname].forEach(function(m) {
+      var el = document.createElement('div');
+      el.className = 'item';
+      el.innerHTML = '<span class="item-id">' + m.id + '</span><span class="item-name">' + m.name + '</span>';
+      el.onclick = (function(item, elem) { return function() { selectMeasure(item, elem); }; })(m, el);
+      measureList.appendChild(el);
+    });
+  });
+}
+
+// Select a measure → show related problems on right
+function selectMeasure(m, el) {
+  if (selectedMeasureEl) selectedMeasureEl.classList.remove('selected');
+  el.classList.add('selected');
+  selectedMeasureEl = el;
+
+  var linked = LINKS.filter(function(l) { return l.mid === m.id; });
+  var pgGroups = {};
+  linked.forEach(function(l) {
+    if (!pgGroups[l.pg]) pgGroups[l.pg] = [];
+    if (!pgGroups[l.pg].find(function(x) { return x.id === l.pid; }))
+      pgGroups[l.pg].push({ id: l.pid, name: l.pn });
+  });
+
+  var relatedList = document.getElementById('related-list');
+  relatedList.innerHTML = '';
+
+  Object.keys(pgGroups).forEach(function(gname) {
+    var gh = document.createElement('div');
+    gh.className = 'group-header';
+    gh.innerHTML = '<span class="group-label">' + gname + '</span>';
+    relatedList.appendChild(gh);
+
+    pgGroups[gname].forEach(function(p) {
+      var el = document.createElement('div');
+      el.className = 'item';
+      el.innerHTML = '<span class="item-id">' + p.id + '</span><span class="item-name">' + p.name + '</span>';
+      relatedList.appendChild(el);
+    });
+  });
+}
+</script>
+</body>
+</html>
