@@ -103,6 +103,10 @@
     <div class="list-scroll" id="selected-list">
       <div class="empty-state">No measures selected yet.</div>
     </div>
+    <div style="padding:10px 14px; display:flex; gap:8px; border-top:1px solid #d0dce8; flex-shrink:0;">
+      <button onclick="exportCSV()" style="flex:1; padding:8px; background:#1187a7; color:white; border:none; border-radius:6px; font-family:system-ui,sans-serif; font-size:0.82rem; font-weight:600; cursor:pointer;">Export CSV</button>
+      <button onclick="copyList()" id="copy-btn" style="flex:1; padding:8px; background:#eef7fa; color:#1187a7; border:1px solid #d6eef5; border-radius:6px; font-family:system-ui,sans-serif; font-size:0.82rem; font-weight:600; cursor:pointer;">Copy list</button>
+    </div>
   </div>
 </div>
 
@@ -155,6 +159,41 @@ function updateSelected() {
     el.className = 'selected-item';
     el.innerHTML = '<span class="sid">' + m.id + '</span><span class="sname">' + m.name + '</span>';
     list.appendChild(el);
+  });
+}
+function exportCSV() {
+  var keys = Object.keys(selected);
+  if (keys.length === 0) return;
+  var csv = "Measure ID,Measure Name,Group\n";
+  keys.forEach(function(id) {
+    var m = selected[id];
+    csv += '"' + m.id + '","' + m.name + '","' + m.group + '"\n';
+  });
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'selected_measures.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyList() {
+  var keys = Object.keys(selected);
+  if (keys.length === 0) return;
+  var text = keys.map(function(id) {
+    return selected[id].id + ' - ' + selected[id].name;
+  }).join('\n');
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.style.background = '#27ae60';
+    btn.style.color = 'white';
+    setTimeout(function() {
+      btn.textContent = 'Copy list';
+      btn.style.background = '#eef7fa';
+      btn.style.color = '#1187a7';
+    }, 2000);
   });
 }
 </script>
