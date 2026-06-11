@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Measure Selection</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #eef7fa; color: #1a2a3a; }
+
+  header { background: #1187a7; color: white; padding: 12px 20px; }
+  header h1 { font-size: 1rem; font-weight: 600; }
+
+  .layout { display: flex; height: calc(100vh - 48px); }
+
+  .panel-left {
+    width: 60%; background: white;
+    border-right: 1px solid #d0dce8;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .panel-right {
+    flex: 1; background: white;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 10px 14px; border-bottom: 1px solid #d0dce8;
+    font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: #8aa0b0;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .selected-count {
+    background: #1187a7; color: white; border-radius: 8px;
+    padding: 1px 7px; font-size: 0.65rem;
+  }
+
+  .list-scroll { flex: 1; overflow-y: auto; }
+
+  .group-header {
+    padding: 8px 14px 4px;
+    position: sticky; top: 0; background: white; z-index: 1;
+    border-bottom: 1px solid #e8eef5;
+  }
+  .group-label { font-size: 0.7rem; font-weight: 600; color: #4a6070; }
+
+  .measure-item {
+    padding: 7px 14px 7px 18px; display: flex; align-items: flex-start;
+    gap: 10px; cursor: pointer; border-left: 3px solid transparent;
+    transition: background 0.1s;
+  }
+  .measure-item:hover { background: #eef7fa; border-left-color: #1187a7; }
+  .measure-item.checked { background: #e6f5fa; border-left-color: #1187a7; }
+  .measure-item input[type="checkbox"] {
+    margin-top: 2px; flex-shrink: 0; accent-color: #1187a7; width: 14px; height: 14px;
+    pointer-events: none;
+  }
+  .measure-id {
+    font-size: 0.63rem; font-weight: 600; color: #1187a7;
+    background: #d6eef5; border-radius: 3px; padding: 2px 4px;
+    flex-shrink: 0; margin-top: 1px; white-space: nowrap;
+  }
+  .measure-name { font-size: 0.81rem; color: #2c3e50; line-height: 1.4; }
+
+  .empty-state {
+    display: flex; align-items: center; justify-content: center;
+    height: 100%; color: #aaa; font-size: 0.82rem; text-align: center; padding: 20px;
+  }
+
+  .selected-item {
+    padding: 7px 14px 7px 18px; display: flex; align-items: flex-start;
+    gap: 8px; border-left: 3px solid #1187a7;
+    border-bottom: 1px solid #e8eef5;
+  }
+  .selected-item .sid {
+    font-size: 0.63rem; font-weight: 600; color: #1187a7;
+    background: #d6eef5; border-radius: 3px; padding: 2px 4px;
+    flex-shrink: 0; white-space: nowrap; margin-top: 1px;
+  }
+  .selected-item .sname { font-size: 0.81rem; color: #2c3e50; line-height: 1.4; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: #d0dce8; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header><h1>Measure Selection</h1></header>
+
+<div class="layout">
+  <div class="panel-left">
+    <div class="panel-header">Measures</div>
+    <div class="list-scroll" id="measure-list"></div>
+  </div>
+
+  <div class="panel-right">
+    <div class="panel-header">
+      <span>Selected</span>
+      <span class="selected-count" id="selected-count">0</span>
+    </div>
+    <div class="list-scroll" id="selected-list">
+      <div class="empty-state">No measures selected yet.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var MEASURES = [{"id":"A01","name":"Prevent sedimentation at the dam by artificial turbulence","group":"Enhance sediment continuity at the dam"},{"id":"A02","name":"Prevent sedimentation at transversal barriers through bypass systems","group":"Enhance sediment continuity at the dam"},{"id":"A03","name":"Sediment transfer through the turbines","group":"Enhance sediment continuity at the dam"},{"id":"A04","name":"Controlled sediment transfer at transversal barriers","group":"Enhance sediment continuity at the dam"},{"id":"A05","name":"Removal of transversal barriers","group":"Enhance sediment continuity at the dam"},{"id":"A06","name":"Modification of transversal barrier","group":"Enhance sediment continuity at the dam"},{"id":"A07","name":"Minimize fixed weir or sill height","group":"Enhance sediment continuity at the dam"},{"id":"A08","name":"Minimize dam or weir width","group":"Enhance sediment continuity at the dam"},{"id":"A09","name":"Open ship locks for local remobilization of sediments","group":"Enhance sediment continuity at the dam"},{"id":"A10","name":"Modify weir fields to increase sediment continuity","group":"Enhance sediment continuity at the dam"},{"id":"A11","name":"Install large bottom outlets or gates for venting, sluicing or flushing","group":"Enhance sediment continuity at the dam"},{"id":"A12","name":"Pressure scouring","group":"Enhance sediment continuity at the dam"},{"id":"A13","name":"Local dredging at intake structures","group":"Enhance sediment continuity at the dam"},{"id":"A14","name":"Innovative hydropower plants","group":"Enhance sediment continuity at the dam"},{"id":"B01","name":"Prevent sedimentation in the reservoir or impoundment by venting turbid density currents","group":"Enhance sediment continuity in the reservoir"},{"id":"B02","name":"Prevent sedimentation in the reservoir or impoundment by artificial turbulence","group":"Enhance sediment continuity in the reservoir"},{"id":"B03","name":"Prevent sedimentation in the reservoir or impoundment with a sediment bypass","group":"Enhance sediment continuity in the reservoir"},{"id":"B04","name":"Sediment removal from reservoirs or impoundments by flushing","group":"Enhance sediment continuity in the reservoir"},{"id":"B05","name":"Prevent sedimentation in reservoirs or impoundments by sluicing","group":"Enhance sediment continuity in the reservoir"},{"id":"B06","name":"Enhance sediment transfer through impoundments by bedload drift","group":"Enhance sediment continuity in the reservoir"},{"id":"B07","name":"Sediment removal by dredging and reinsertion","group":"Enhance sediment continuity in the reservoir"},{"id":"B08","name":"Minimize reservoir or impoundment width by hydraulic structures","group":"Enhance sediment continuity in the reservoir"},{"id":"B09","name":"Reduce impoundment level (effects in reach upstream of barrier)","group":"Enhance sediment continuity in the reservoir"},{"id":"B10","name":"Off-stream reservoir","group":"Enhance sediment continuity in the reservoir"},{"id":"B11","name":"Optimized flushing or sluicing strategies for dams in series","group":"Enhance sediment continuity in the reservoir"},{"id":"B12","name":"Integrated dredging and feeding management","group":"Enhance sediment continuity in the reservoir"},{"id":"C01","name":"Develop early warning system at hydropower dam with operational adjustment","group":"Improve fish continuity"},{"id":"C02","name":"Increase weir and spill overflow at hydropower dams","group":"Improve fish continuity"},{"id":"C03","name":"Implement technical fishway","group":"Improve fish continuity"},{"id":"C04","name":"Implement nature-like fishway","group":"Improve fish continuity"},{"id":"C05","name":"Implement fish lifts, locks or pumps","group":"Improve fish continuity"},{"id":"C06","name":"Collection and transport systems for fish","group":"Improve fish continuity"},{"id":"C07","name":"Install fine fish protection screens with bypass systems","group":"Improve fish continuity"},{"id":"C08","name":"Implement barrier nets with bypass system","group":"Improve fish continuity"},{"id":"C09","name":"Implement fish guidance structures with bypass system","group":"Improve fish continuity"},{"id":"C10","name":"Implement skimming walls and bottom overlays with bypass system","group":"Improve fish continuity"},{"id":"C11","name":"Install sensory behavioural barriers with bypass system","group":"Improve fish continuity"},{"id":"C12","name":"Ecologically improved turbines","group":"Improve fish continuity"},{"id":"C13","name":"Removal of riverbed revetment","group":"Improve fish continuity"},{"id":"D01","name":"Removal of dikes","group":"Improve flood retention through measures at the dike"},{"id":"D02","name":"Local lowering of dike crest for targeted floodplain flooding","group":"Improve flood retention through measures at the dike"},{"id":"D03","name":"Dike relocation","group":"Improve flood retention through measures at the dike"},{"id":"D04","name":"Opening dikes","group":"Improve flood retention through measures at the dike"},{"id":"D05","name":"Implementing culverts and inlet sluices into the dikes","group":"Improve flood retention through measures at the dike"},{"id":"E01","name":"Sidearm and oxbow lake reconnection","group":"Improve flood retention through measures in the floodplain"},{"id":"E02","name":"Filling drainage ditches","group":"Improve flood retention through measures in the floodplain"},{"id":"E03","name":"Creating retention ponds or polders in floodplains","group":"Improve flood retention through measures in the floodplain"},{"id":"E04","name":"Restoration of floodplains","group":"Improve flood retention through measures in the floodplain"},{"id":"E05","name":"Declaration of statutory floodplains","group":"Improve flood retention through measures in the floodplain"},{"id":"E06","name":"Removal of particular objects from floodplains (within flood risk management)","group":"Improve flood retention through measures in the floodplain"},{"id":"F01","name":"Prevention of contaminats from entering the river system","group":"Prevent river contamination"},{"id":"G01","name":"Provide minimum flow requirement","group":"Provide sufficient residual flow"},{"id":"G02","name":"Provide instream flow requirement","group":"Provide sufficient residual flow"},{"id":"G03","name":"Establish dynamic environmental flows","group":"Provide sufficient residual flow"},{"id":"G04","name":"Adjusting operational protocols of dams and weirs of hydropower facilities","group":"Provide sufficient residual flow"},{"id":"H01","name":"Adjusting operational protocols of dams and weirs of hydropower facilities to reduce hydropeaking","group":"Reduce hydropeaking"},{"id":"H02","name":"Reduce hydropeaking by installing a retention basin","group":"Reduce hydropeaking"},{"id":"I01","name":"Remobilisation of consolidated gravel bars","group":"Reduce riverbed erosion"},{"id":"I02","name":"Sediment feeding","group":"Reduce riverbed erosion"},{"id":"I03","name":"Removal of artificial bank protection structures (Riverbank restoration)","group":"Reduce riverbed erosion"},{"id":"I04","name":"River widening (artificial or self-forming)","group":"Reduce riverbed erosion"},{"id":"I05","name":"River remeandering (artificial or self-forming)","group":"Reduce riverbed erosion"},{"id":"I06","name":"Lowering elevations of natural near-river banks","group":"Reduce riverbed erosion"},{"id":"I07","name":"Break-up of bed armouring (artificial flood or mechanical)","group":"Reduce riverbed erosion"},{"id":"I08","name":"Install bedload trap (as part of integrated dredging and feeding management)","group":"Reduce riverbed erosion"},{"id":"I09","name":"Enlarge morphological space of rivers","group":"Reduce riverbed erosion"},{"id":"I10","name":"Coarse particle feeding (granulometric bed improvement)","group":"Reduce riverbed erosion"},{"id":"I11","name":"Minimize or stop commercial dredging","group":"Reduce riverbed erosion"},{"id":"I12","name":"Optimisation of river engineering structures to reduce erosion (e.g. groyne optimization)","group":"Reduce riverbed erosion"},{"id":"J01","name":"Restore forest riparian buffer","group":"Reduce sediment input"},{"id":"J02","name":"Minimize urbanisation and construction of building on sloped terrain","group":"Reduce sediment input"},{"id":"J03","name":"Fixation of riverbanks by bioengineering techniques","group":"Reduce sediment input"},{"id":"K01","name":"Optimisation of river engineering structures to reduce sedimentation (e.g. groyne optimization)","group":"Reduce sedimentation"},{"id":"K02","name":"Minimize anthropogenically caused excessive debris flow, mass movements and landslides","group":"Reduce sedimentation"},{"id":"K03","name":"Reducing surface runoff through infiltration and retention","group":"Reduce sedimentation"},{"id":"K04","name":"Adjusting land use to reduce sediment and nutrient input","group":"Reduce sedimentation"},{"id":"K05","name":"Reducing undesired (fine) sediment input","group":"Reduce sedimentation"},{"id":"L01","name":"Remediation of contaminated sediments - in situ technologies (physical/chemical/biological)","group":"Remove contaminated sediments"},{"id":"L02","name":"Remediation of contaminated sediments - ex situ treatment (physical/chemical/biological/thermal)","group":"Remove contaminated sediments"},{"id":"L03","name":"Improve combined sewer systems by strictly separating stormwater drainage from sanitary sewage","group":"Remove contaminated sediments"},{"id":"M01","name":"Reconstruction of irrigation systems for improved sustainable water use","group":"Climate adaptation"},{"id":"M02","name":"Adapt crop production towards less water-intensive crops","group":"Climate adaptation"},{"id":"M03","name":"Ensuring natural infiltration areas in the landscape and former floodplains","group":"Climate adaptation"},{"id":"N01","name":"Restriction of water use in periods with water deficits","group":"Separate measure"},{"id":"N02","name":"Fairway shifting or narrowing","group":"Separate measure"},{"id":"N03","name":"Increase of minimum flow by reservoir and lake management","group":"Separate measure"},{"id":"O01","name":"Construction of gravel islands at riverbanks to improve ecological habitats in impoundments","group":"Structural enhancement in the impoundment to improve ecology"},{"id":"O02","name":"Construction of gravel bars to create shallow bank gradients in impoundments","group":"Structural enhancement in the impoundment to improve ecology"},{"id":"O03","name":"Construction of groynes and guiding walls to improve ecological habitats in impoundments","group":"Structural enhancement in the impoundment to improve ecology"},{"id":"O04","name":"Implementation of sediment biotopes in impoundments to improve ecological habitats","group":"Structural enhancement in the impoundment to improve ecology"},{"id":"O05","name":"Creation of oxbow lakes (side-connected oxbows/lentic water bodies) in impoundments","group":"Structural enhancement in the impoundment to improve ecology"},{"id":"P01","name":"Reduce impoundment level (in the catchment)","group":"Only general description of measure in the text; ev. highlight at HPPs"},{"id":"P02","name":"Removal of transversal barriers (in the catchment)","group":"Only general description of measure in the text; ev. highlight at HPPs"},{"id":"P03","name":"Modification of transversal barrier (in the catchment)","group":"Only general description of measure in the text; ev. highlight at HPPs"},{"id":"P04","name":"Minimize fixed weir or sill height (in the catchment)","group":"Only general description of measure in the text; ev. highlight at HPPs"}];
+var selected = {};
+
+var groups = {};
+var groupOrder = [];
+MEASURES.forEach(function(m) {
+  if (!groups[m.group]) { groups[m.group] = []; groupOrder.push(m.group); }
+  groups[m.group].push(m);
+});
+
+var container = document.getElementById('measure-list');
+groupOrder.forEach(function(gname) {
+  var gh = document.createElement('div');
+  gh.className = 'group-header';
+  gh.innerHTML = '<span class="group-label">' + gname + '</span>';
+  container.appendChild(gh);
+
+  groups[gname].forEach(function(m) {
+    var el = document.createElement('div');
+    el.className = 'measure-item';
+    el.innerHTML =
+      '<input type="checkbox">' +
+      '<span class="measure-id">' + m.id + '</span>' +
+      '<span class="measure-name">' + m.name + '</span>';
+    el.addEventListener('click', function() {
+      if (selected[m.id]) { delete selected[m.id]; el.classList.remove('checked'); el.querySelector('input').checked = false; }
+      else { selected[m.id] = m; el.classList.add('checked'); el.querySelector('input').checked = true; }
+      updateSelected();
+    });
+    container.appendChild(el);
+  });
+});
+
+function updateSelected() {
+  var keys = Object.keys(selected);
+  document.getElementById('selected-count').textContent = keys.length;
+  var list = document.getElementById('selected-list');
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="empty-state">No measures selected yet.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  keys.forEach(function(id) {
+    var m = selected[id];
+    var el = document.createElement('div');
+    el.className = 'selected-item';
+    el.innerHTML = '<span class="sid">' + m.id + '</span><span class="sname">' + m.name + '</span>';
+    list.appendChild(el);
+  });
+}
+</script>
+</body>
+</html>
